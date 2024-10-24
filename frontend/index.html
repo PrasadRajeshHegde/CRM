@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple CRM System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+        }
+
+        .navbar {
+            background-color: #2c3e50;
+            padding: 1rem;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .customer-list {
+            margin-top: 2rem;
+        }
+
+        .customer-card {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #666;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #3498db;
+            color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>CRM System</h1>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('customers')">Customers</button>
+            <!--<button class="tab" onclick="showTab('leads')">Leads</button>-->
+            <!--<button class="tab" onclick="showTab('deals')">Deals</button>-->
+        </div>
+
+        <div id="customers" class="tab-content active">
+            <div class="card">
+                <h2>Add New Customer</h2>
+                <form id="customerForm" onsubmit="addCustomer(event)">
+                    <div class="form-group">
+                        <label for="name">Customer Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <button type="submit">Add Customer</button>
+                </form>
+            </div>
+            <div class="customer-list" id="customerList">
+                <!-- Customer cards will be added here dynamically -->
+            </div>
+        </div>
+
+        <div id="leads" class="tab-content">
+            <div class="card">
+                <h2>Leads Management</h2>
+                <!-- Add lead management content here -->
+            </div>
+        </div>
+
+        <div id="deals" class="tab-content">
+            <div class="card">
+                <h2>Deals Pipeline</h2>
+                <!-- Add deals pipeline content here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Replace the existing script section with this code
+const API_URL = 'http://localhost:5000/api';
+
+// Add customer function
+async function addCustomer(event) {
+    event.preventDefault();
+    
+    const customerData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        status: document.getElementById('status').value
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/customers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(customerData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add customer');
+        }
+
+        document.getElementById('customerForm').reset();
+        await displayCustomers();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to add customer');
+    }
+}
+
+// Display customers function
+async function displayCustomers() {
+    try {
+        const response = await fetch(`${API_URL}/customers`);
+        const customers = await response.json();
+        
+        const customerList = document.getElementById('customerList');
+        customerList.innerHTML = customers.map(customer => `
+            <div class="customer-card">
+                <h3>${customer.name}</h3>
+                <p>Email: ${customer.email}</p>
+                <p>Phone: ${customer.phone}</p>
+                <p>Status: ${customer.status}</p>
+                <button onclick="deleteCustomer('${customer._id}')">Delete</button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to load customers');
+    }
+}
+// Delete customer function
+async function deleteCustomer(id) {
+    try {
+        const response = await fetch(`${API_URL}/customers/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete customer');
+        }
+
+        await displayCustomers();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete customer');
+    }
+}
+
+
+// Initial display
+displayCustomers();
+    </script>
+</body>
+</html>
